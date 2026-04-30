@@ -21,6 +21,11 @@
         </dependency>
         <dependency>
             <groupId>com.inventage.keycloak.log-level</groupId>
+            <artifactId>keycloak-log-level</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.inventage.keycloak.log-level</groupId>
             <artifactId>themes</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -102,7 +107,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>themes</includeArtifactIds>
+                            <includeArtifactIds>keycloak-log-level,themes</includeArtifactIds>
                             <outputDirectory>${project.build.outputDirectory}/keycloak/providers</outputDirectory>
                         </configuration>
                     </execution>
