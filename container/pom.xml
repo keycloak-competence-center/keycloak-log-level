@@ -21,11 +21,6 @@
         </dependency>
         <dependency>
             <groupId>com.inventage.keycloak.custom</groupId>
-            <artifactId>extension-no-op-authenticator</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.inventage.keycloak.custom</groupId>
             <artifactId>themes</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -100,7 +95,6 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                         </configuration>
                     </execution>
-                    <!-- for copying extension-no-op-authenticator -->
                     <execution>
                         <id>copy-providers</id>
                         <phase>package</phase>
@@ -108,7 +102,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>extension-no-op-authenticator,themes</includeArtifactIds>
+                            <includeArtifactIds>themes</includeArtifactIds>
                             <outputDirectory>${project.build.outputDirectory}/keycloak/providers</outputDirectory>
                         </configuration>
                     </execution>
