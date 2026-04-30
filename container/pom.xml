@@ -6,7 +6,7 @@
 
     <parent>
         <artifactId>parent</artifactId>
-        <groupId>com.inventage.keycloak.custom</groupId>
+        <groupId>com.inventage.keycloak.log-level</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
@@ -15,12 +15,12 @@
     <dependencies>
         <!-- dependencies to be included in the container image -->
         <dependency>
-            <groupId>com.inventage.keycloak.custom</groupId>
+            <groupId>com.inventage.keycloak.log-level</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.inventage.keycloak.custom</groupId>
+            <groupId>com.inventage.keycloak.log-level</groupId>
             <artifactId>themes</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -90,7 +90,7 @@
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeGroupIds>com.inventage.keycloak.custom</includeGroupIds>
+                            <includeGroupIds>com.inventage.keycloak.log-level</includeGroupIds>
                             <includeArtifactIds>config</includeArtifactIds>
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                         </configuration>

@@ -4,10 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.inventage.keycloak.custom</groupId>
+    <groupId>com.inventage.keycloak.log-level</groupId>
     <artifactId>parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <name>Dynamic log level extension for Keycloak</name>
+    <description>A Keycloak extension that exposes a REST endpoint for inspecting and changing log levels at runtime, without restarting the server.</description>
+    <url>https://github.com/keycloak-competence-center/keycloak-log-level</url>
 
     <licenses>
         <license>
@@ -30,6 +34,12 @@
         <url>https://inventage.com/</url>
     </organization>
 
+    <scm>
+        <connection>scm:git:https://github.com/keycloak-competence-center/keycloak-log-level.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/keycloak-competence-center/keycloak-log-level.git</developerConnection>
+        <url>https://github.com/keycloak-competence-center/keycloak-log-level/tree/main</url>
+    </scm>
+
     <modules>
         <module>server</module>
         <module>config</module>
@@ -47,12 +57,12 @@
         <keycloak.target.dir>../server/${keycloak.dir}/</keycloak.target.dir> <!-- used in config & extension modules -->
         <keycloak.providers.dir>../../server/${keycloak.dir}/providers</keycloak.providers.dir> <!-- used in extension modules -->
         <keycloak.themes.dir>../server/${keycloak.dir}/themes</keycloak.themes.dir> <!-- used in themes module -->
-        <docker.registry>ghcr.io/inventage/keycloak-custom/</docker.registry>
-        <docker.image.name>com.inventage.keycloak.custom.container</docker.image.name>
+        <docker.registry>ghcr.io/inventage/keycloak-log-level/</docker.registry>
+        <docker.image.name>com.inventage.keycloak.log-level.container</docker.image.name>
         <docker.contextDir>${project.build.outputDirectory}</docker.contextDir>
         <docker.verbose>true</docker.verbose>
         <docker.imagePropertyConfiguration>override</docker.imagePropertyConfiguration>
-        <helm.registry>ghcr.io/inventage/keycloak-custom</helm.registry>
+        <helm.registry>ghcr.io/inventage/keycloak.log-level</helm.registry>
         <!-- versions -->
         <keycloak.version>26.6.1</keycloak.version> <!-- update also keycloak-config-cli.version -->
         <keycloak-config-cli.version>26.5.4_v6.5.0</keycloak-config-cli.version> <!-- from https://github.com/adorsys/keycloak-config-cli/releases -->
