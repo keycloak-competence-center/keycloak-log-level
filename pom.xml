@@ -9,6 +9,27 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Christopher Signer</name>
+            <email>christopher.signer@inventage.com</email>
+            <organization>Inventage AG</organization>
+            <organizationUrl>https://inventage.com/</organizationUrl>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>Inventage AG</name>
+        <url>https://inventage.com/</url>
+    </organization>
+
     <modules>
         <module>server</module>
         <module>config</module>
@@ -306,6 +327,53 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.7.3</version>
+
+                    <configuration>
+                        <flattenMode>ossrh</flattenMode>
+                        <flattenDependencyMode>all</flattenDependencyMode>
+                    </configuration>
+
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.12.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -395,4 +463,12 @@
             </build>
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>kcc-maven-staging</id>
+            <name>Nexus 3 kcc-maven-staging</name>
+            <url>https://nexus3.inventage.com/repository/kcc-maven-staging/</url>
+        </repository>
+    </distributionManagement>
 </project>
