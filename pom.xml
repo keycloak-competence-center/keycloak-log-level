@@ -72,6 +72,7 @@
         <testcontainers-postgres.version>2.0.1</testcontainers-postgres.version>
         <testcontainers.version>2.0.3</testcontainers.version>
         <failsafe-plugin.version>3.5.4</failsafe-plugin.version>
+        <playwright.version>1.59.0</playwright.version>
         <chart.directory>${project.basedir}/src/generated/keycloak-custom-chart</chart.directory>
     </properties>
 

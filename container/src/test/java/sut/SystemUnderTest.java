@@ -3,7 +3,7 @@ package sut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class SystemUnderTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemUnderTest.class);
-    private static final String DOCKER_IMAGE_NAME_POSTGRES = "postgres:16-alpine";
+    private static final String DOCKER_IMAGE_NAME_POSTGRES = "postgres:18-alpine";
     private static final String NETWORK_ALIAS_POSTGRES = "postgres";
     private static final String DATABASE_NAME_POSTGRES = "postgres";
     private String runningKeycloakBaseUrl;
@@ -46,7 +46,7 @@ public class SystemUnderTest {
     }
 
     private PostgreSQLContainer startPostgres(Network network) {
-        postgres = new PostgreSQLContainer<>(DOCKER_IMAGE_NAME_POSTGRES)
+        postgres = new PostgreSQLContainer(DOCKER_IMAGE_NAME_POSTGRES)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 .withNetwork(network)
                 .withNetworkAliases(NETWORK_ALIAS_POSTGRES)
@@ -56,7 +56,8 @@ public class SystemUnderTest {
         try {
             postgres.start();
             return postgres;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println(postgres.getLogs());
             throw e;
         }
@@ -69,14 +70,15 @@ public class SystemUnderTest {
         try {
             keycloak.start();
             return keycloak;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println(keycloak.getLogs());
             throw e;
         }
     }
 
     private Map<String, String> getKeycloakEnvs() {
-        HashMap<String, String> envs = new HashMap<>();
+        final HashMap<String, String> envs = new HashMap<>();
         envs.put("PRINT_ENV", "true");
         envs.put("KC_HTTP_ENABLED", "true");
         envs.put("KC_HOSTNAME_STRICT", "false");
@@ -92,7 +94,10 @@ public class SystemUnderTest {
         envs.put("KC_DB_USERNAME", postgres.getUsername());
         envs.put("KC_DB_PASSWORD", postgres.getPassword());
         envs.put("KC_DB_URL", String.format("jdbc:postgresql://%s:5432/%s?loggerLevel=OFF", NETWORK_ALIAS_POSTGRES, DATABASE_NAME_POSTGRES));
-        envs.put("KC_LOG_LEVEL", "info");
+        // Root INFO; one named category pre-configured to WARN so the integration
+        // tests can verify that DELETE restores a logger's startup baseline rather
+        // than unconditionally clearing it.
+        envs.put("KC_LOG_LEVEL", "info,com.inventage.test.loglevel.baseline:warn");
         return envs;
     }
 
