@@ -2,6 +2,7 @@
   "realm": "master",
   "enabled": true,
   "sslRequired": "$(env:REALM_MASTER_SSL_REQUIRED:-external)",
+  "adminTheme": "keycloak-log-level",
   "adminEventsEnabled": true,
   "adminEventsDetailsEnabled": true,
   "eventsEnabled": true,
@@ -198,6 +199,29 @@
         "view": true,
         "configure": true,
         "manage": true
+      }
+    },
+    {
+      "clientId": "keycloak-log-level-ui",
+      "name": "Keycloak log-level extension UI",
+      "description": "Public client used by the log-levels admin theme page (Keycloak.js silent SSO).",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "/resources/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "fullScopeAllowed": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
       }
     }
   ]

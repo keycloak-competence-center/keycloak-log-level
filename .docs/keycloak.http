@@ -7,4 +7,97 @@ traceparent: 00-00000000000000000000000000000001-0000000000000001-01
 GET http://localhost:8080/realms/example1/.well-known/openid-configuration
 
 
+###############################################################################
+# keycloak-log-level extension
 #
+# REST resource mounted at /realms/master/logging. All calls require a bearer
+# token for a user with the master realm 'admin' role. The endpoint is only
+# accepted on the master realm — calling it on any other realm returns 403.
+#
+# Run the local stack first (see docker-compose/) so Keycloak listens on :8080.
+# The first request below logs in the bootstrap admin and stores the access
+# token as the client-global {{token}} variable used by the rest of the file.
+###############################################################################
+
+@host = http://localhost:8080
+@admin_user = temp-admin
+@admin_password = admin
+
+### Login: bootstrap master-realm admin via admin-cli (password grant)
+POST {{host}}/realms/master/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id=admin-cli&username={{admin_user}}&password={{admin_password}}&grant_type=password
+
+> {%
+    client.global.set("token", response.body.access_token);
+%}
+
+### List all loggers and their effective levels
+GET {{host}}/realms/master/logging
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get the ROOT logger (alias for the unnamed root logger)
+GET {{host}}/realms/master/logging/ROOT
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get a specific logger (effective + configured level)
+GET {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Set org.keycloak to DEBUG (java.util.logging level name)
+PUT {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "level": "DEBUG"
+}
+
+### Verify the new level took effect
+GET {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Set the extension's own logger to TRACE (JBoss alias accepted by the LogManager)
+PUT {{host}}/realms/master/logging/com.inventage.keycloak.loglevel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "level": "TRACE"
+}
+
+### Reset org.keycloak so it inherits from its parent again
+DELETE {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+
+### Reset the ROOT logger
+DELETE {{host}}/realms/master/logging/ROOT
+Authorization: Bearer {{token}}
+
+### Bad request: missing 'level' in body — expect 400
+PUT {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Bad request: unknown level name — expect 400
+PUT {{host}}/realms/master/logging/org.keycloak
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "level": "BOGUS"
+}
+
+### Unauthorized: no bearer token — expect 401
+GET {{host}}/realms/master/logging
+
+### Forbidden: endpoint called on a non-master realm — expect 403
+GET {{host}}/realms/example1/logging
+Authorization: Bearer {{token}}
