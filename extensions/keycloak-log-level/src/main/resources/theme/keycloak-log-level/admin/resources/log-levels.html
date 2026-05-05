@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title data-i18n="pageTitle">Keycloak — Log levels</title>
+    <!-- Keycloak ships a favicon at /resources/<version>/common/keycloak/img/favicon.ico.
+         Our page is served at /resources/<version>/admin/keycloak-log-level/log-levels.html,
+         so a two-up relative reference reaches it without any runtime version interpolation. -->
+    <link rel="icon" type="image/x-icon" href="../../common/keycloak/img/favicon.ico">
+    <link rel="stylesheet" href="css/log-levels.css">
+</head>
+<body>
+<main class="kc-ll-page">
+    <header class="kc-ll-header">
+        <a class="kc-ll-back" href="/admin/master/console/" data-i18n="back">&larr; Admin console</a>
+        <h1 class="kc-ll-title" data-i18n="title">Log levels</h1>
+        <p class="kc-ll-subtitle" data-i18n="subtitle">Inspect and change Keycloak log levels at runtime. Changes are not persisted &mdash; they are lost on restart.</p>
+    </header>
+
+    <section class="kc-ll-content">
+        <div class="kc-ll-toolbar">
+            <div class="kc-ll-toolbar__search">
+                <input id="filter" class="kc-ll-input" type="search"
+                       placeholder="Search loggers..." data-i18n-placeholder="search" autocomplete="off">
+                <button id="filter-clear" class="kc-ll-toolbar__clear" type="button"
+                        aria-label="Clear search" data-i18n-aria-label="searchClear" hidden>&times;</button>
+            </div>
+            <label class="kc-ll-toolbar__toggle">
+                <input id="modified-only" type="checkbox">
+                <span data-i18n="modifiedOnly">Modified only</span>
+            </label>
+            <button id="expand-all" class="kc-ll-button" type="button" data-i18n="expandAll">Expand all</button>
+            <button id="reload" class="kc-ll-button" type="button" data-i18n="reload">Reload</button>
+        </div>
+
+        <div id="status" class="kc-ll-status" role="status" aria-live="polite" hidden>
+            <p id="status-text" class="kc-ll-status__text"></p>
+        </div>
+
+        <table id="loggers" class="kc-ll-table" role="grid" hidden>
+            <thead>
+            <tr>
+                <th scope="col" data-i18n="thLogger">Logger</th>
+                <th scope="col" data-i18n="thLevel">Effective level</th>
+                <th scope="col" data-i18n="thSet">Set</th>
+                <th scope="col" aria-label="Reset" data-i18n-aria-label="thReset"></th>
+            </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+        </table>
+    </section>
+</main>
+
+<template id="row-tpl">
+    <tr class="kc-ll-row">
+        <td class="kc-ll-row__name-cell" data-label="Logger">
+            <button class="kc-ll-row__expand" type="button" aria-label="Expand inherited descendants" hidden>&#x25B6;</button>
+            <span class="kc-ll-row__name"></span>
+        </td>
+        <td data-label="Effective level" class="kc-ll-row__level"></td>
+        <td data-label="Set">
+            <select class="kc-ll-input kc-ll-row__select" aria-label="Set level">
+                <option value="">&mdash; set level &mdash;</option>
+                <option>OFF</option>
+                <option>ERROR</option>
+                <option>WARN</option>
+                <option>INFO</option>
+                <option>DEBUG</option>
+                <option>TRACE</option>
+                <option>ALL</option>
+            </select>
+        </td>
+        <td data-label="Reset">
+            <button class="kc-ll-button kc-ll-button--link kc-ll-row__reset" type="button">Reset</button>
+        </td>
+    </tr>
+</template>
+
+<script type="module" src="js/log-levels-app.js"></script>
+</body>
+</html>

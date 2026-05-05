@@ -1,0 +1,359 @@
+/* Self-contained styling for the standalone log-levels page.
+ *
+ * Theme overrides: a custom admin theme that sets parent=keycloak-log-level can
+ * replace this stylesheet at resources/css/log-levels.css for a full restyle, or
+ * replace resources/log-levels.html for structural changes. The kc-ll-* class
+ * names below are the stable styling hooks. Light/dark colour values are
+ * exposed as CSS custom properties so a consumer can override only the palette
+ * by redefining --kc-ll-* on :root.
+ */
+
+:root {
+    --kc-ll-bg: #f4f4f5;
+    --kc-ll-surface: #ffffff;
+    --kc-ll-text: #151515;
+    --kc-ll-text-muted: #6a6e73;
+    --kc-ll-border: #d2d2d2;
+    --kc-ll-border-soft: #f0f0f0;
+    --kc-ll-accent: #06c;
+    --kc-ll-accent-soft: #f0f8ff;
+    --kc-ll-danger: #a30000;
+    --kc-ll-danger-soft: #faeaea;
+    --kc-ll-success: #3e8635;
+    --kc-ll-success-soft: #f0f8e6;
+    --kc-ll-warning: #b58900;
+    --kc-ll-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --kc-ll-radius: 3px;
+    /* Localized suffix shown after the level on inherited rows. JS overwrites
+     * this from the messages bundle on init; the default here is the English
+     * value so the page stays readable if the bundle fetch fails. */
+    --kc-ll-inherited-suffix: " (inherited)";
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --kc-ll-bg: #151515;
+        --kc-ll-surface: #1f1f1f;
+        --kc-ll-text: #f0f0f0;
+        --kc-ll-text-muted: #9d9da0;
+        --kc-ll-border: #3c3c3c;
+        --kc-ll-border-soft: #2a2a2a;
+        --kc-ll-accent: #73bcf7;
+        --kc-ll-accent-soft: #1b3a59;
+        --kc-ll-danger: #ff6b6b;
+        --kc-ll-danger-soft: #4a1c1c;
+        --kc-ll-success: #95d3a3;
+        --kc-ll-success-soft: #1c3b22;
+        --kc-ll-warning: #f0c674;
+        --kc-ll-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    background: var(--kc-ll-bg);
+    color: var(--kc-ll-text);
+    font-family: 'RedHatText', 'Open Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Page chrome */
+
+.kc-ll-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.kc-ll-header {
+    margin-bottom: 1.5rem;
+}
+
+.kc-ll-back {
+    color: var(--kc-ll-accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+.kc-ll-back:hover { text-decoration: underline; }
+
+.kc-ll-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin: 0 0 0.25rem;
+}
+
+.kc-ll-subtitle {
+    color: var(--kc-ll-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.kc-ll-content {
+    background: var(--kc-ll-surface);
+    border: 1px solid var(--kc-ll-border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--kc-ll-shadow);
+}
+
+/* Toolbar */
+
+.kc-ll-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* Search input wraps an <input type="search"> + a custom × button. The
+ * native clear button on type="search" is WebKit-only — Firefox doesn't
+ * render one — so we ship our own and suppress WebKit's so all browsers
+ * show the same affordance. The container is positioned so the button can
+ * sit absolutely inside the input's right padding. */
+.kc-ll-toolbar__search {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.kc-ll-toolbar__search > .kc-ll-input {
+    width: 100%;
+    padding-right: 1.8rem;
+}
+.kc-ll-toolbar__search > .kc-ll-input::-webkit-search-cancel-button {
+    appearance: none;
+    -webkit-appearance: none;
+}
+.kc-ll-toolbar__clear {
+    position: absolute;
+    right: 0.35rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--kc-ll-text-muted);
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--kc-ll-radius);
+}
+.kc-ll-toolbar__clear:hover {
+    color: var(--kc-ll-text);
+    background: var(--kc-ll-border-soft);
+}
+
+.kc-ll-toolbar__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    color: var(--kc-ll-text-muted);
+    cursor: pointer;
+    user-select: none;
+}
+.kc-ll-toolbar__toggle input {
+    margin: 0;
+}
+
+/* Form controls */
+
+.kc-ll-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--kc-ll-border);
+    border-radius: var(--kc-ll-radius);
+    font-size: 0.875rem;
+    background: var(--kc-ll-surface);
+    color: var(--kc-ll-text);
+}
+.kc-ll-input:focus {
+    outline: 2px solid var(--kc-ll-accent);
+    outline-offset: -1px;
+    border-color: transparent;
+}
+
+.kc-ll-button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--kc-ll-accent);
+    color: var(--kc-ll-accent);
+    background: var(--kc-ll-surface);
+    border-radius: var(--kc-ll-radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+.kc-ll-button:hover { background: var(--kc-ll-accent-soft); }
+.kc-ll-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.kc-ll-button--link {
+    border: 0;
+    background: transparent;
+    padding: 0.25rem 0.5rem;
+}
+.kc-ll-button--link.kc-ll-row__reset { color: var(--kc-ll-danger); }
+.kc-ll-button--link.kc-ll-row__reset:hover { background: var(--kc-ll-danger-soft); }
+
+/* Status banner */
+
+.kc-ll-status {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--kc-ll-border);
+    border-radius: var(--kc-ll-radius);
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    background: var(--kc-ll-surface);
+    color: var(--kc-ll-text);
+}
+.kc-ll-status--success {
+    background: var(--kc-ll-success-soft);
+    border-color: var(--kc-ll-success);
+    color: var(--kc-ll-success);
+}
+.kc-ll-status--danger {
+    background: var(--kc-ll-danger-soft);
+    border-color: var(--kc-ll-danger);
+    color: var(--kc-ll-danger);
+}
+.kc-ll-status__text { margin: 0; }
+
+/* Table */
+
+.kc-ll-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+.kc-ll-table th,
+.kc-ll-table td {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--kc-ll-border-soft);
+    vertical-align: middle;
+}
+.kc-ll-table th {
+    background: var(--kc-ll-bg);
+    font-weight: 500;
+    color: var(--kc-ll-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.kc-ll-table tbody tr:hover {
+    background: var(--kc-ll-border-soft);
+}
+
+/* Row internals */
+
+.kc-ll-row__name {
+    font-family: 'RedHatMono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.825rem;
+    word-break: break-all;
+}
+
+.kc-ll-row__level {
+    width: 9rem;
+    font-weight: 600;
+}
+
+.kc-ll-row__select {
+    min-width: 10rem;
+}
+
+/* Expand chevron — hidden by default via the [hidden] attribute on the
+ * template button. JS only un-hides it on rows whose expansion would actually
+ * reveal inherited descendants. We deliberately omit a default `display`
+ * declaration so the UA `[hidden] { display: none }` rule wins; the chevron
+ * picks up its inline-block styling via the `:not([hidden])` selector below.
+ */
+.kc-ll-row__expand:not([hidden]) {
+    display: inline-block;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin-right: 0.4rem;
+    cursor: pointer;
+    color: var(--kc-ll-text-muted);
+    width: 0.9em;
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: transform 0.1s ease;
+    vertical-align: middle;
+}
+.kc-ll-row__expand.is-expanded {
+    transform: rotate(90deg);
+}
+
+/* When a row has inherited descendants, its name cell becomes clickable to
+ * expand/collapse — the cell is a much bigger hit target than the chevron alone.
+ * The chevron itself stays a focusable button for keyboard users; click events
+ * bubble from the chevron up to the cell so a single handler covers both.
+ */
+.kc-ll-row__name-cell.is-expandable {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Inherited (child) row styling */
+
+.kc-ll-row.is-inherited .kc-ll-row__name {
+    padding-left: 1.5rem;
+    color: var(--kc-ll-text-muted);
+}
+.kc-ll-row.is-inherited .kc-ll-row__level {
+    color: var(--kc-ll-text-muted);
+    font-weight: normal;
+}
+.kc-ll-row.is-inherited .kc-ll-row__level::after {
+    content: var(--kc-ll-inherited-suffix);
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+/* Override marker.
+ *
+ * A row is "overridden" when its currently-configured level differs from the
+ * level captured at startup — i.e. someone changed it at runtime and a reset
+ * would actually do something. The class is set in JS (see buildRow); the CSS
+ * here drives two visual cues:
+ *
+ * 1. Reset button visibility. The button is hidden by default and only revealed
+ *    on overridden rows. That makes its presence meaningful: when it's there,
+ *    clicking it changes state.
+ * 2. Amber level text on configured-and-overridden rows so an operator can spot
+ *    runtime tweaks at a glance. We deliberately skip is-inherited rows: the
+ *    level shown there is the parent's effective value, not a runtime override
+ *    sitting on the logger itself, so the muted-inherited styling is the right
+ *    visual treatment even if a reset is still meaningful (state B).
+ */
+.kc-ll-row__reset {
+    visibility: hidden;
+}
+.kc-ll-row.is-overridden .kc-ll-row__reset {
+    visibility: visible;
+}
+.kc-ll-row.is-overridden:not(.is-inherited) .kc-ll-row__level {
+    color: var(--kc-ll-warning);
+}
+
+/* Prospective row: a category the operator typed into search that doesn't
+ * exist yet. Subtle accent-tint background plus italic name distinguish it
+ * from a regular inherited row without making it look like an error state.
+ * Setting a level via the dropdown PUTs as normal — the server creates the
+ * Logger lazily, after which the row becomes a real configured one on reload.
+ */
+.kc-ll-row.is-prospective {
+    background: var(--kc-ll-accent-soft);
+}
+.kc-ll-row.is-prospective .kc-ll-row__name {
+    font-style: italic;
+}
+
+/* Modified-only filter: a class on the table toggled by the toolbar checkbox.
+ * Hides rows that aren't carrying a runtime override so the operator can quickly
+ * review what they've changed during a debugging session. Composes with the
+ * search filter — that one removes rows from the DOM, this one display:none's
+ * what's left.
+ */
+.kc-ll-table.is-modified-only .kc-ll-row:not(.is-overridden) {
+    display: none;
+}

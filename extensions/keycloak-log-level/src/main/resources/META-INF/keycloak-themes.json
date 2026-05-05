@@ -1,0 +1,6 @@
+{
+  "themes": [{
+    "name": "keycloak-log-level",
+    "types": ["admin"]
+  }]
+}
