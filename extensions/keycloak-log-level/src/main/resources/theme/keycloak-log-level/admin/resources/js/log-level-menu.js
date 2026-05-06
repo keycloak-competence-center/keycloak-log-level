@@ -86,6 +86,26 @@ function copyStableClasses(sibling) {
 }
 
 /**
+ * Build a fresh PKCE S256 challenge from a random verifier. The verifier is
+ * discarded immediately — the probe never exchanges the auth code, so the
+ * verifier exists only briefly in this function's stack frame. Hardcoding a
+ * known challenge (e.g. the RFC 7636 example) would weaken PKCE's protection:
+ * an attacker who could intercept the probe's auth code could trivially
+ * exchange it because the corresponding verifier would be public knowledge.
+ */
+async function makeProbeChallenge() {
+    const verifier = window.crypto.getRandomValues(new Uint8Array(32));
+    const digest = await window.crypto.subtle.digest("SHA-256", verifier);
+    return bytesToBase64Url(new Uint8Array(digest));
+}
+
+function bytesToBase64Url(bytes) {
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/**
  * Returns true iff the OIDC auth endpoint accepts our client and redirect URI.
  *
  * Probe: prompt=none authorization request with redirect: 'manual'.
@@ -93,14 +113,25 @@ function copyStableClasses(sibling) {
  *   auth code, or with error=login_required). Fetch returns type 'opaqueredirect'.
  * - Missing or misconfigured client ⇒ Keycloak returns a 400 HTML error page
  *   directly, never redirecting to an unverified URI. type === 'basic'.
+ *
+ * The recommended client config enforces PKCE (S256), so the probe sends a
+ * well-formed code_challenge to satisfy parameter validation. Without it the
+ * probe would still work (Keycloak still 302s on PKCE failure, satisfying the
+ * opaqueredirect check) but would emit a noisy WARN-level LOGIN_ERROR on
+ * every admin-console page load. Web Crypto is required and assumed present —
+ * the standalone page's real auth flow has the same dependency, and missing
+ * it would mean PKCE auth wouldn't work at all.
  */
 async function isClientConfigured(env, redirectUri) {
+    const challenge = await makeProbeChallenge();
     const params = new URLSearchParams({
         response_type: "code",
         client_id: CLIENT_ID,
         redirect_uri: redirectUri,
         scope: "openid",
         prompt: "none",
+        code_challenge: challenge,
+        code_challenge_method: "S256",
     });
     const url = `${env.authServerUrl}/realms/master/protocol/openid-connect/auth?${params.toString()}`;
     try {
