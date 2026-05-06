@@ -204,6 +204,13 @@
                             <include>**/*</include>
                         </includes>
                         <groups>integration</groups> <!-- for tests annotated with `@Tag("integration")` -->
+                        <!-- Re-run a failing IT once before declaring failure. The Playwright
+                             tests occasionally time out under runner load (especially macOS
+                             Docker Desktop); each test uses fresh UUID-scoped loggers so a
+                             rerun doesn't collide with the first attempt's leftover state.
+                             A flake passes on the second run and is reported as a flake; a
+                             genuine failure still fails after the second attempt. -->
+                        <rerunFailingTestsCount>1</rerunFailingTestsCount>
                     </configuration>
                     <executions>
                         <execution>

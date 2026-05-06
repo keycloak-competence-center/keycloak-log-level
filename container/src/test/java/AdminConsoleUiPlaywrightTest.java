@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers
 class AdminConsoleUiPlaywrightTest {
 
-    private static final long NAV_TIMEOUT_MS = 30_000;
+    private static final long NAV_TIMEOUT_MS = 60_000;
     private static final long ACTION_TIMEOUT_MS = 15_000;
     /**
      * Logger fixture used by both the canary tests and the "inherited" tests.
