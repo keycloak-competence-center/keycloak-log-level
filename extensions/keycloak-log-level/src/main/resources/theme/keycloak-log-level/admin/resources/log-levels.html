@@ -14,7 +14,11 @@
 <body>
 <main class="kc-ll-page">
     <header class="kc-ll-header">
-        <a class="kc-ll-back" href="/admin/master/console/" data-i18n="back">&larr; Admin console</a>
+        <!-- The master admin console lives at <httpRelativePath>/admin/master/console/ where
+             httpRelativePath defaults to "/" but is configurable (e.g. "/auth/"). Our page is
+             served at <httpRelativePath>/resources/<version>/admin/keycloak-log-level/log-levels.html,
+             so a four-up relative reference reaches the admin console regardless of the prefix. -->
+        <a class="kc-ll-back" href="../../../../admin/master/console/" data-i18n="back">&larr; Admin console</a>
         <h1 class="kc-ll-title" data-i18n="title">Log levels</h1>
         <p class="kc-ll-subtitle" data-i18n="subtitle">Inspect and change Keycloak log levels at runtime. Changes are not persisted &mdash; they are lost on restart.</p>
     </header>
