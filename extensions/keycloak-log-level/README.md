@@ -137,7 +137,9 @@ To enable the UI, two things are needed in the master realm:
     }
     ```
 
-   The `redirectUris` pattern matches Keycloak's theme-resource URL (`/resources/<version>/admin/keycloak-log-level/log-levels.html`); only Keycloak itself can serve content under `/resources/*`, so the wildcard is safe.
+   The `redirectUris` pattern matches Keycloak's theme-resource URL (`/resources/<version>/admin/keycloak-log-level/log-levels.html`); only Keycloak itself can serve content under `/resources/*`, so the wildcard is safe. The example above assumes the default mount (`http-relative-path=/`).
+
+   **`http-relative-path` deployments.** The page itself works with any [`http-relative-path`](https://www.keycloak.org/server/all-config) — `/` (default), `/auth`, or any other prefix — by deriving the prefix client-side from its own URL. The OIDC client's `redirectUris`, however, must include the prefix explicitly: Keycloak resolves a relative pattern like `/resources/*` against the host (`https://host/resources/*`), **not** against the realm frontend URL, so the prefix is not automatically applied. For `http-relative-path=/auth/` use `/auth/resources/*`; for any other prefix use `<prefix>/resources/*`. Absolute URIs follow the same rule: `https://kc.example.com/auth/resources/*`.
 
 The menu entry is only injected when **both** of these are in place — the theme provides the script that renders the entry, and on first load the script probes the OIDC auth endpoint to confirm `keycloak-log-level-ui` is configured. If either is missing the entry stays hidden, which keeps the UI strictly opt-in for consumers who only want the REST API. Once both are configured, anyone with the master-realm `admin` role sees the **Log levels** entry under the *Configure* section of the admin sidebar.
 

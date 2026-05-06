@@ -11,7 +11,15 @@
 // (parent=keycloak-log-level) can drop an additional messages_<locale>.json into
 // the same directory to add or override translations.
 
-const API_BASE = "/realms/master/logging";
+// Keycloak's http-relative-path can mount the server under any prefix
+// (default "/", but installations frequently use "/auth"). Our page is
+// always served at <prefix>/resources/<version>/admin/keycloak-log-level/
+// log-levels.html, so splitting the current pathname on "/resources/" yields
+// the prefix as the first segment ("" for the default mount, "/auth" etc.
+// otherwise). Auth and API calls must include it, or they 404 against the
+// wrong path.
+const HTTP_RELATIVE_PATH = window.location.pathname.split("/resources/")[0];
+const API_BASE = HTTP_RELATIVE_PATH + "/realms/master/logging";
 const REALM = "master";
 const CLIENT_ID = "keycloak-log-level-ui";
 const TOKEN_REFRESH_LEEWAY_MS = 30_000;
@@ -40,7 +48,7 @@ let statusToken = 0;
 let allExpanded = false;
 
 const auth = createAuth({
-    serverBase: window.location.origin,
+    serverBase: window.location.origin + HTTP_RELATIVE_PATH,
     realm: REALM,
     clientId: CLIENT_ID,
     redirectUri: window.location.origin + window.location.pathname,
