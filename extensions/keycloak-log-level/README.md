@@ -110,6 +110,8 @@ A runnable set of requests — token grab via password grant, list/get/set/reset
 
 The same jar also ships an admin theme named `keycloak-log-level` that injects a **Log levels** entry into the master-realm admin console sidebar. Clicking it opens a standalone page (also bundled in the jar) that lists every logger, lets you change a level via a dropdown, and reset back to the startup baseline via a button — all backed by the REST endpoint above. The reset button shows the level it will install (e.g. `Reset → INFO`) so it's clear what reset does for a logger that was pre-configured via `KC_LOG_LEVEL`.
 
+![Log levels admin page](.docs/log-levels-ui.png)
+
 To enable the UI, two things are needed in the master realm:
 
 1. **Set the admin theme** on the master realm to `keycloak-log-level`. Either via the admin console (Realm settings → Themes → Admin theme) or via realm import:
