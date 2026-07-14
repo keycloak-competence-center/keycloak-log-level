@@ -9,6 +9,8 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.mockito.ArgumentCaptor;
 
 import java.util.logging.Level;
@@ -16,8 +18,10 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,6 +57,43 @@ class LoggingResourceProviderFactoryTest {
     void cleanUp() {
         Logger.getLogger(LOGGER_NAME).setLevel(null);
         factory.baselineRegistry().clearForTesting();
+    }
+
+    /**
+     * Reproduces the startup NPE from the field: opening a session (and thus
+     * resolving providers) directly in {@code postInit} races against other
+     * factories' {@code postInit} — the JPA connection factory may not have
+     * its EntityManagerFactory yet, and the ClusterProvider lookup transitively
+     * reaches it via the JGroups mTLS certificate store. The factory must not
+     * touch the session factory until {@link PostMigrationEvent} fires.
+     */
+    @Test
+    void postInit_opensNoSession_beforePostMigrationEvent() {
+        final KeycloakSessionFactory sessionFactory = mock(KeycloakSessionFactory.class);
+
+        factory.postInit(sessionFactory);
+
+        verify(sessionFactory, never()).create();
+    }
+
+    @Test
+    void postMigrationEvent_registersClusterListener() {
+        final KeycloakSessionFactory sessionFactory = mock(KeycloakSessionFactory.class);
+        final KeycloakSession session = mock(KeycloakSession.class);
+        final ClusterProvider cluster = mock(ClusterProvider.class);
+        when(sessionFactory.create()).thenReturn(session);
+        when(session.getProvider(ClusterProvider.class)).thenReturn(cluster);
+
+        factory.postInit(sessionFactory);
+
+        final ArgumentCaptor<ProviderEventListener> providerEvents =
+                ArgumentCaptor.forClass(ProviderEventListener.class);
+        verify(sessionFactory).register(providerEvents.capture());
+
+        providerEvents.getValue().onEvent(new PostMigrationEvent(sessionFactory));
+
+        verify(cluster).registerListener(eq(KeycloakClusterBroadcaster.CLUSTER_TASK_KEY), any(ClusterListener.class));
+        verify(session).close();
     }
 
     @Test
@@ -98,6 +139,13 @@ class LoggingResourceProviderFactoryTest {
         when(session.getProvider(ClusterProvider.class)).thenReturn(cluster);
 
         factory.postInit(sessionFactory);
+
+        // The cluster listener is only wired once Keycloak signals that all
+        // factories are initialized and DB migration has finished.
+        final ArgumentCaptor<ProviderEventListener> providerEvents =
+                ArgumentCaptor.forClass(ProviderEventListener.class);
+        verify(sessionFactory).register(providerEvents.capture());
+        providerEvents.getValue().onEvent(new PostMigrationEvent(sessionFactory));
 
         final ArgumentCaptor<ClusterListener> captor = ArgumentCaptor.forClass(ClusterListener.class);
         verify(cluster).registerListener(eq(KeycloakClusterBroadcaster.CLUSTER_TASK_KEY), captor.capture());

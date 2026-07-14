@@ -8,6 +8,7 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
@@ -16,9 +17,10 @@ import static com.inventage.keycloak.loglevel.domain.LoggerName.ROOT;
 /**
  * Composition root for the keycloak-log-level extension. Owns the JVM-scoped
  * adapters ({@link JulLoggerRegistry} and {@link StartupBaselineRegistry}),
- * snapshots the startup baseline once Keycloak is ready, and registers a
- * cluster listener so this node applies level changes broadcast by other
- * replicas. Per-request adapters (the cluster broadcaster and the audit
+ * snapshots the startup baseline once Keycloak is ready, and — once
+ * {@link PostMigrationEvent} signals that the server is fully bootstrapped —
+ * registers a cluster listener so this node applies level changes broadcast
+ * by other replicas. Per-request adapters (the cluster broadcaster and the audit
  * publisher) are wired by the REST resource itself so they can carry the
  * request's session and auth context.
  */
@@ -43,24 +45,30 @@ public class LoggingResourceProviderFactory implements RealmResourceProviderFact
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         baselines.snapshot();
-        registerClusterListener(factory);
-    }
-
-    private void registerClusterListener(KeycloakSessionFactory factory) {
         if (factory == null) {
             // unit tests pass null; no cluster wiring there
             return;
         }
-        final KeycloakSession session = factory.create();
-        try {
+        // postInit ordering across provider factories is not guaranteed;
+        // opening a session here can reach the JPA layer before its own
+        // postInit ran (NPE on a null EntityManagerFactory when the
+        // ClusterProvider lookup starts JGroups with DB-backed mTLS certs).
+        // Defer all session work until Keycloak signals full bootstrap.
+        factory.register(event -> {
+            if (event instanceof PostMigrationEvent) {
+                registerClusterListener(factory);
+            }
+        });
+    }
+
+    private void registerClusterListener(KeycloakSessionFactory factory) {
+        try (KeycloakSession session = factory.create()) {
             final ClusterProvider cluster = session.getProvider(ClusterProvider.class);
             if (cluster == null) {
                 LOG.warn("ClusterProvider unavailable; log level changes will not propagate to other replicas");
                 return;
             }
             cluster.registerListener(KeycloakClusterBroadcaster.CLUSTER_TASK_KEY, this::onClusterEvent);
-        } finally {
-            session.close();
         }
     }
 
