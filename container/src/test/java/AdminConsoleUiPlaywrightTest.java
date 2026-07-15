@@ -4,6 +4,7 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.TimeoutError;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -140,6 +141,37 @@ class AdminConsoleUiPlaywrightTest {
         if (sut != null) {
             sut.stop();
         }
+    }
+
+    @Test
+    void login_recoversWhenAuthenticationFlowIsRestarted() {
+        // Deterministic regression test for the first-login cookie race (see
+        // newSignedInContext javadoc): losing the race leaves the browser with an
+        // AUTH_SESSION_ID that doesn't match the login form's authentication
+        // session. Simulate exactly that by corrupting the cookie before the
+        // first submit; Keycloak restarts the flow and re-renders the login form,
+        // and the sign-in helper must recover by re-submitting.
+        try (BrowserContext ctx = newSignedInContext(
+                AdminConsoleUiPlaywrightTest::corruptAuthSessionCookie)) {
+            assertTrue(ctx.pages().get(0).locator("#kc-log-level-nav-item").isVisible(),
+                    "sign-in helper should reach the admin console despite the restarted login flow");
+        }
+    }
+
+    /**
+     * Replace the value of every AUTH_SESSION_ID* cookie with a stale one, keeping
+     * all other attributes (domain, path, expiry, …) so the browser still sends it.
+     * This mimics the pre-auth probe's Set-Cookie landing after the login page's.
+     */
+    private static void corruptAuthSessionCookie(Page page) {
+        final BrowserContext ctx = page.context();
+        final java.util.List<com.microsoft.playwright.options.Cookie> stale =
+                ctx.cookies().stream()
+                        .filter(cookie -> cookie.name.startsWith("AUTH_SESSION_ID"))
+                        .peek(cookie -> cookie.value = "stale-root-auth-session")
+                        .toList();
+        assertTrue(!stale.isEmpty(), "expected an AUTH_SESSION_ID cookie on the login page");
+        ctx.addCookies(stale);
     }
 
     @Test
@@ -712,21 +744,66 @@ class AdminConsoleUiPlaywrightTest {
                 name)).longValue();
     }
 
+    /**
+     * The very first login against a freshly started (cold) server can lose a
+     * cookie race: log-level-menu.js runs on the pre-auth console shell, and its
+     * client probe hits the OIDC auth endpoint concurrently with the console's
+     * own authorization redirect. Both responses set a fresh AUTH_SESSION_ID in
+     * the still-empty cookie jar; if the probe's response lands last (likely
+     * while the server is still JIT-compiling), the submitted login form belongs
+     * to the other auth session and Keycloak restarts the flow (LOGIN_ERROR
+     * expired_code, restart_after_timeout) and re-renders the login form.
+     * Retrying on the re-rendered form succeeds — the cookie jar has settled by
+     * then. Real users see one "login timed out" page and click through; the
+     * test does the same instead of failing.
+     */
+    private static final int LOGIN_ATTEMPTS = 3;
+    /** Per-attempt wait before checking whether the login flow was restarted. */
+    private static final long LOGIN_RESULT_TIMEOUT_MS = 20_000;
+
     private BrowserContext newSignedInContext() {
+        return newSignedInContext(page -> {
+        });
+    }
+
+    /**
+     * @param beforeFirstSubmit test hook, invoked once on the filled-in login form
+     *                          before the first submit (used to simulate the cookie race)
+     */
+    private BrowserContext newSignedInContext(java.util.function.Consumer<Page> beforeFirstSubmit) {
         final BrowserContext ctx = browser.newContext();
         final Page page = ctx.newPage();
         page.navigate(localhostBase() + "/admin/master/console/");
 
-        page.locator("#username").waitFor(
-                new Locator.WaitForOptions().setTimeout(NAV_TIMEOUT_MS));
-        page.locator("#username").fill(sut.keycloak.getAdminUsername());
-        page.locator("#password").fill(sut.keycloak.getAdminPassword());
-        page.locator("#kc-login").click();
+        final Locator navItem = page.locator("#kc-log-level-nav-item");
+        final Locator username = page.locator("#username");
+        for (int attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt++) {
+            username.waitFor(new Locator.WaitForOptions().setTimeout(NAV_TIMEOUT_MS));
+            username.fill(sut.keycloak.getAdminUsername());
+            page.locator("#password").fill(sut.keycloak.getAdminPassword());
+            if (attempt == 1) {
+                beforeFirstSubmit.accept(page);
+            }
+            page.locator("#kc-login").click();
 
-        // Waiting for our injected nav item proves both that the admin console rendered
-        // and that our theme's MutationObserver successfully attached.
-        page.locator("#kc-log-level-nav-item").waitFor(
-                new Locator.WaitForOptions().setTimeout(NAV_TIMEOUT_MS));
-        return ctx;
+            // Waiting for our injected nav item proves both that the admin console rendered
+            // and that our theme's MutationObserver successfully attached.
+            try {
+                navItem.waitFor(new Locator.WaitForOptions().setTimeout(LOGIN_RESULT_TIMEOUT_MS));
+                return ctx;
+            }
+            catch (TimeoutError e) {
+                if (username.isVisible()) {
+                    continue; // login flow was restarted (see javadoc above) — retry on the fresh form
+                }
+                // No login form: we are past authentication, the console is just slow.
+                // Keep the original full wait budget before giving up.
+                navItem.waitFor(new Locator.WaitForOptions().setTimeout(NAV_TIMEOUT_MS));
+                return ctx;
+            }
+        }
+        throw new AssertionError(
+                "admin console login did not succeed after " + LOGIN_ATTEMPTS + " attempts"
+                        + " (login flow kept being restarted)");
     }
 }
