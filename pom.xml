@@ -64,16 +64,23 @@
         <docker.imagePropertyConfiguration>override</docker.imagePropertyConfiguration>
         <helm.registry>ghcr.io/inventage/keycloak.log-level</helm.registry>
         <!-- versions -->
-        <keycloak.version>26.6.1</keycloak.version> <!-- update also keycloak-config-cli.version -->
-        <keycloak-config-cli.version>26.5.4_v6.5.0</keycloak-config-cli.version> <!-- from https://github.com/adorsys/keycloak-config-cli/releases -->
+        <keycloak.version>26.7.0</keycloak.version> <!-- update also keycloak-config-cli.version -->
+        <keycloak-config-cli.version>26.5.5_v6.5.1</keycloak-config-cli.version> <!-- from https://github.com/adorsys/keycloak-config-cli/releases -->
         <auto-service.version>1.1.1</auto-service.version>
         <!-- https://github.com/dasniko/testcontainers-keycloak/releases -->
-        <testcontainers-keycloak.version>4.1.1</testcontainers-keycloak.version>
-        <testcontainers-postgres.version>2.0.1</testcontainers-postgres.version>
-        <testcontainers.version>2.0.3</testcontainers.version>
+        <testcontainers-keycloak.version>4.2.1</testcontainers-keycloak.version>
+        <testcontainers-postgres.version>2.0.5</testcontainers-postgres.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <failsafe-plugin.version>3.5.4</failsafe-plugin.version>
         <playwright.version>1.59.0</playwright.version>
         <chart.directory>${project.basedir}/src/generated/keycloak-custom-chart</chart.directory>
+        <!-- configuration for using the keycloak test framework by surefire -->
+        <testframework.surefire.args>
+            -XX:+ExitOnOutOfMemoryError
+            -XX:+HeapDumpOnOutOfMemoryError
+            -Djava.util.logging.manager=org.jboss.logmanager.LogManager
+            -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory
+        </testframework.surefire.args>
     </properties>
 
     <dependencyManagement>
@@ -93,11 +100,19 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <!-- keycloak test framework -->
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-bom</artifactId>
+                <version>${keycloak.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
             <!-- utils -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.6</version>
+                <version>3.20.0</version>
             </dependency>
             <!-- testcontainers -->
             <dependency>
@@ -133,7 +148,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.6.2</version>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -189,6 +204,7 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <maven.home>${maven.home}</maven.home>
                         </systemPropertyVariables>
+                        <argLine>${testframework.surefire.args}</argLine>
                     </configuration>
                 </plugin>
                 <!-- integration testing: https://maven.apache.org/surefire/maven-failsafe-plugin/ -->
@@ -229,7 +245,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.10.0</version>
+                    <version>3.11.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
